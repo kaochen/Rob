@@ -1,15 +1,9 @@
-# Bob — The Sentient Washing Machine (Raspberry Pi Voice Chatbot)
+# Rob — The  (Raspberry Pi Voice Chatbot)
 
-> **Availability & Kits (Important)**
->
-> Bob is **free to make and print for personal use**. For convenience, a **limited number of pre‑printed kits** (including screens, switches, and microphones) are available here **[ominousindustries.com](https://ominousindustries.com/collections/robots/products/bob-the-sentient-washing-machine-parts-kit-no-pi-included)**.
-
-> ![Bob kit photo](/imagebob.png)
----
+This is a fork of Bob the sentient : https://github.com/OminousIndustries/Bob
 
 ## Contents
 
-- [3D Printed Parts](#3d-printed-parts)
 - [Step 1 — Audio, Bluetooth & Chatbot Base](#step-1--audio-bluetooth--chatbot-base)
   - [1. System packages](#1-system-packages)
   - [2. Enable services](#2-enable-services)
@@ -31,13 +25,28 @@
 - [Notes](#notes)
 
 ---
+Configuring the Rapsberry Pi
 
-## 3D Printed Parts
+https://www.raspberrypi.com/software/
+On a linux device install the rpi-imager with :
+~~~bash
+sudo apt install rpi-imager
+~~~
+For the OS Selection, choose into "Rapsberry Pi OS (other)" sub-category : "Rapsberry Pi OS Lite (64-bit)
 
-All print files are available here:  
-**Printables:** <https://www.printables.com/model/1404129-bob-the-sentient-washing-machine>
+If the preset configuration did not apply on the new system. Connect a Keyboard and a screen to the Rapsberry : 
+~~~bash
+sudo raspi-config
+##check the ip address:
+ifconfig
+~~~
 
-A **limited number of pre‑printed kits** (including screens, switches, and microphones) are available here **[ominousindustries.com](https://ominousindustries.com/collections/robots/products/bob-the-sentient-washing-machine-parts-kit-no-pi-included)**.
+Many router from your provider come with a web interface, where you can find the address of the new device or assign one use the Mac adress.
+Connection with ssh using the user your setup for the rapsberry and its ip address :
+~~~bash
+ssh user@192.168.x.x
+~~~
+
 
 ---
 
@@ -87,7 +96,7 @@ sudo loginctl enable-linger $USER
 # Verify PipeWire is up
 systemctl --user status pipewire
 ~~~
-
+https://wiretuts.com/connecting-bluetooth-audio-device-to-raspberry-pi/
 ---
 
 ### 3) Bluetooth speaker setup
@@ -147,6 +156,18 @@ pw-play test.wav
 ---
 
 ### 5) Project & Python deps
+#### 5.2 Install :
+~~~bash
+sudo apt install -y make build-essential libssl-dev zlib1g-dev \
+libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
+libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev \
+liblzma-dev python3-openssl
+
+~~~
+With the last upade of Raspberry OS (Trixie) a dev package is missing for "kokoro"
+We need to force a python 3.12 virtual environment.
+
+(FIXME https://blog.stephane-robert.info/docs/developper/programmation/python/pyenv/)
 
 ~~~bash
 # Create project
@@ -154,7 +175,7 @@ mkdir -p ~/voice-chatbot
 cd ~/voice-chatbot
 
 # Python virtual environment
-python3 -m venv .venv
+python3.12 -m venv .venv
 source .venv/bin/activate
 
 # Upgrade pip and install packages
@@ -169,23 +190,59 @@ source ~/.bashrc
 source .venv/bin/activate
 ~~~
 
+
+#### 5.2 Whisper test :
+https://github.com/openai/whisper
+
+Record 10 seconds of voice:
+~~~bash
+#record your voice from your microphone
+arecord --format=cd file.wav -d 10
+
+#Send record to whisper using an specific language:
+whisper file.wav --model small --language fr --fp16 False
+cat file.txt 
+Je suis en train de tester, on va voir ce qui se passe.
+
 ---
 
 ### 6) Install Ollama & model
+https://ollama.com/library/gemma3
 
-~~~bash
+~~~sh
 # Install Ollama server
 curl -fsSL https://ollama.com/install.sh | sh
 
 # Enable and start the Ollama daemon
 sudo systemctl enable --now ollama
 
-# Download a small, fast model
+# Download a small, fast model (the gemma3:1b is more accurate but use more RAM...)
 ollama pull gemma3:270m
 
-# Verify it responds
-ollama run gemma3:270m "Say hello"
+# Check :
+ollama run gemma3:270m "How old was Emperor Julius Ceasar when he died ?"
+Julius Caesar died on **15 April 44 BC**.
+
+#Better with a larger model:
+
+ollama run gemma3:1b "How old was Emperor Julius Ceasar when he died ?"
+Emperor Julius Caesar died at the age of 60. 
+He was born in 100 BC and died in 44 BC.
+
+##List the models installed :
+ollama list
+NAME           ID              SIZE      MODIFIED    
+gemma3:1b      8648f39daa8f    815 MB    2 hours ago    
+gemma3:270m    e7d36fb2c3b3    291 MB    5 hours ago
+
+##List the running models
+ollame ps
+
+#Depending on the RAM left (check with using htop)
+ollama stop gemma3:270m 
 ~~~
+https://en.wikipedia.org/wiki/Julius_Caesar
+
 
 ---
 
@@ -205,7 +262,7 @@ MIC_TARGET=66 python3 chatbot.py
 
 ---
 
-## Step 2 — SPI Display (Waveshare) & “Bob” Chat
+## Step 2 — SPI Display (Waveshare) & “Rob” Chat
 
 ### 1) Enable SPI & groups, reboot
 

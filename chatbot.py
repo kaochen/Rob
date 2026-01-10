@@ -51,8 +51,8 @@ MIN_SPEECH_MS = 300
 MAX_RECORDING_MS = 15000
 
 # Models
-WHISPER_MODEL = "tiny.en"
-LLM_MODEL = "gemma3:270m"
+WHISPER_MODEL = "small"
+LLM_MODEL = "gemma3:1b"
 TTS_VOICE = "af_heart"
 TTS_SPEED = 1.1
 
