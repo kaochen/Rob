@@ -162,21 +162,37 @@ sudo apt install -y make build-essential libssl-dev zlib1g-dev \
 libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
 libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev \
 liblzma-dev python3-openssl
-
 ~~~
 With the last upade of Raspberry OS (Trixie) a dev package is missing for "kokoro"
 We need to force a python 3.12 virtual environment.
 
 (FIXME https://blog.stephane-robert.info/docs/developper/programmation/python/pyenv/)
 
+Install pyenv :
+~~~bash
+curl https://pyenv.run | bash
+~~~
+
+Edit .bashrc and add :
+~~~bash
+export PYENV_ROOT="$HOME/.pyenv"
+command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
+eval "$(pyenv init --path)"
+eval "$(pyenv init -)"
+~~~
+
+Load Python 3.12.0
+~~~bash
+pyenv install 3.12.0
+pyenv virtualenv 3.12.0 myenv-3.12
+pyenv activate myenv-3.12
+~~~
+
 ~~~bash
 # Create project
 mkdir -p ~/voice-chatbot
 cd ~/voice-chatbot
 
-# Python virtual environment
-python3.12 -m venv .venv
-source .venv/bin/activate
 
 # Upgrade pip and install packages
 pip install --upgrade pip
@@ -186,8 +202,6 @@ pip install faster-whisper ollama numpy kokoro
 echo 'export OMP_NUM_THREADS=4' >> ~/.bashrc
 source ~/.bashrc
 
-# Ensure venv is active for the rest of the setup
-source .venv/bin/activate
 ~~~
 
 
