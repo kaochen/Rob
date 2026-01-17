@@ -328,10 +328,11 @@ def speak_text(tts_pipeline, text):
             audio_np = _to_numpy_audio(audio)
             pcm16 = (np.clip(audio_np, -1.0, 1.0) * 32767.0).astype(np.int16).tobytes()
             play_cmd = [
-                "pw-cat", "--playback", "-",
-                "--format", "s16",
-                "--rate", str(sr),
-                "--channels", "1"
+                "paplay",
+                "--raw",
+                "--format=s16le",
+                "--rate=" + str(sr),
+                "--channels=1"
             ]
             proc = subprocess.Popen(play_cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
             _, stderr = proc.communicate(pcm16)
