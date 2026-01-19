@@ -27,6 +27,7 @@ from pathlib import Path
 import ollama
 from kokoro import KPipeline
 from faster_whisper import WhisperModel
+from chatvoice import synthesize_and_play
 
 # Optional GPIO stop button
 try:
@@ -81,7 +82,7 @@ def init_models():
     )
 
     print("  Loading Kokoro TTS...")
-    tts = KPipeline(lang_code='a')
+    tts = KPipeline(lang_code='f')
 
     print("  Checking Ollama...")
     try:
@@ -271,7 +272,7 @@ def transcribe_audio(whisper_model, audio_path):
     try:
         segments, info = whisper_model.transcribe(
             str(audio_path),
-            language="en",
+            language="fr",
             beam_size=1,
             best_of=1,
             temperature=0.0,
@@ -448,12 +449,14 @@ def main():
                 if user_text:
                     print(f"📝 You said: \"{user_text}\"")
                     if any(w in user_text.lower() for w in ["goodbye", "bye", "stop", "exit", "quit", "shut down", "turn off"]):
-                        speak_text(tts_pipeline, "Goodbye!")
+                        synthesize_and_play("Goodbye!")
                         break
 
                     reply = generate_response(user_text)
                     print(f"🤖 Assistant: \"{reply}\"\n")
-                    speak_text(tts_pipeline, reply)
+                    print("🔊 Speaking...")
+                    synthesize_and_play(reply)
+                    #speak_text(tts_pipeline, reply)
 
                     print(f"⏳ Ready again in {AUTO_RESTART_DELAY}s...")
                     time.sleep(AUTO_RESTART_DELAY)

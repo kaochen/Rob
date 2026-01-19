@@ -217,7 +217,7 @@ arecord --format=cd file.wav -d 10
 whisper file.wav --model small --language fr --fp16 False
 cat file.txt 
 Je suis en train de tester, on va voir ce qui se passe.
-
+~~~
 ---
 
 ### 6) Install Ollama & model
@@ -257,7 +257,10 @@ ollama stop gemma3:270m
 ~~~
 https://en.wikipedia.org/wiki/Julius_Caesar
 
-
+### 7) Generate the audio voice using piper-tts
+~~~bash
+pip install piper-tts sounddevice soundfile scipy
+~~~
 ---
 
 ### 7) Create & run `chatbot.py`
