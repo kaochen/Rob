@@ -1,0 +1,59 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-01-24 16:26+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: chatbot.py:92
+msgid "  Checking Ollama..."
+msgstr ""
+
+#: chatbot.py:89
+msgid "  Loading Kokoro TTS..."
+msgstr ""
+
+#: chatbot.py:80
+msgid "  Loading Whisper..."
+msgstr ""
+
+#: chatbot.py:110
+msgid "⚠️  GPIO pins not accessible"
+msgstr ""
+
+#: chatbot.py:99
+msgid "✅ All models loaded successfully!\n"
+msgstr ""
+
+#: chatbot.py:96
+msgid ""
+"❌ Ollama not running! Start it with: sudo systemctl enable --now ollama"
+msgstr ""
+
+#: chatbot.py:162
+msgid "🎤 Listening... (speak now)"
+msgstr ""
+
+#: chatbot.py:78
+msgid "📦 Loading models (this may take a moment the first time)..."
+msgstr ""
+
+#: chatbot.py:107
+msgid "🔘 Stop button ready on GPIO 22"
+msgstr ""
+
+#: chatbot.py:77
+msgid "🚀 Starting Voice Chatbot..."
+msgstr ""

@@ -3,6 +3,7 @@ import sounddevice as sd
 from piper.voice import PiperVoice
 from scipy.io.wavfile import write
 
+
 def synthesize_and_play(text, save_to_file=False, filename="output.wav"):
     """
     Synthesize text to speech and play it via sounddevice.
@@ -21,7 +22,6 @@ def synthesize_and_play(text, save_to_file=False, filename="output.wav"):
         dtype='int16'
     )
     stream.start()
-
     try:
         # Synthesize the text (returns a generator of AudioChunk)
         audio_generator = voice.synthesize(text)

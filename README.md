@@ -423,3 +423,14 @@ ollama run gemma3:270m "Say hello"
 - Replace placeholders like `<sink-id>`, `<source-id>`, and `XX:XX:XX:XX:XX:XX` with values from `wpctl status` and `bluetoothctl`.
 - Re-activate the venv in new shells: `source ~/voice-chatbot/.venv/bin/activate`.
 - On Pi 5, prefer `lgpio`/`rpi-lgpio`; legacy `RPi.GPIO` is removed above to avoid conflicts.
+
+
+##Localization :
+Example for French :
+~~~bash
+xgettext --from-code=UTF-8 -s  -o locales/messages.pot *.py
+msginit -l fr -o ./locales/fr/LC_MESSAGES/messages.po -i locales/messages.pot
+Compile :
+msgfmt -o locales/fr/LC_MESSAGES/messages.mo locales/fr/LC_MESSAGES/messages.po
+~~~
+Edit locales/messages.pot

@@ -29,6 +29,11 @@ from kokoro import KPipeline
 from faster_whisper import WhisperModel
 from chatvoice import synthesize_and_play
 
+### Setup Localization
+import gettext
+gettext.install('messages', localedir='locales', names=['gettext'])
+
+
 # Optional GPIO stop button
 try:
     from gpiozero import Button
@@ -54,7 +59,7 @@ MAX_RECORDING_MS = 15000
 # Models
 WHISPER_MODEL = "small"
 LLM_MODEL = "gemma3:1b"
-TTS_VOICE = "af_heart"
+TTS_VOICE = "ff_siwis"
 TTS_SPEED = 1.1
 
 # Conversation
@@ -69,10 +74,10 @@ MIC_TARGET = os.environ.get("MIC_TARGET")
 
 # ===== Init =====
 def init_models():
-    print("🚀 Starting Voice Chatbot...")
-    print("📦 Loading models (this may take a moment the first time)...")
+    print(_("🚀 Starting Voice Chatbot..."))
+    print(_("📦 Loading models (this may take a moment the first time)..."))
 
-    print("  Loading Whisper...")
+    print(_("  Loading Whisper..."))
     whisper = WhisperModel(
         WHISPER_MODEL,
         device="cpu",
@@ -81,17 +86,17 @@ def init_models():
         download_root=str(Path.home() / ".cache" / "whisper")
     )
 
-    print("  Loading Kokoro TTS...")
+    print(_("  Loading Kokoro TTS..."))
     tts = KPipeline(lang_code='f')
 
-    print("  Checking Ollama...")
+    print(_("  Checking Ollama..."))
     try:
         ollama.list()
     except Exception:
-        print("❌ Ollama not running! Start it with: sudo systemctl enable --now ollama")
+        print(_("❌ Ollama not running! Start it with: sudo systemctl enable --now ollama"))
         sys.exit(1)
 
-    print("✅ All models loaded successfully!\n")
+    print(_("✅ All models loaded successfully!\n"))
     return whisper, tts
 
 def init_button():
@@ -99,10 +104,10 @@ def init_button():
         return None
     try:
         btn = Button(STOP_BUTTON_PIN, pull_up=True, bounce_time=0.1)
-        print("🔘 Stop button ready on GPIO 22")
+        print(_("🔘 Stop button ready on GPIO 22"))
         return btn
     except Exception:
-        print("⚠️  GPIO pins not accessible")
+        print(_("⚠️  GPIO pins not accessible"))
         return None
 
 # ===== Helpers =====
@@ -294,7 +299,7 @@ def generate_response(user_text):
         resp = ollama.chat(
             model=LLM_MODEL,
             messages=[
-                {"role": "system", "content": "You are a helpful voice assistant. Keep responses concise (max 2 sentences) and conversational."},
+                {"role": "system", "content": "Vous êtes un assistant vocal aidant. Garder les réponses concises (max 2 phrases) et  conversationnel."},
                 {"role": "user", "content": user_text}
             ],
             options={"temperature": 0.7, "num_predict": 60, "top_p": 0.9}
@@ -329,12 +334,12 @@ def speak_text(tts_pipeline, text):
             audio_np = _to_numpy_audio(audio)
             pcm16 = (np.clip(audio_np, -1.0, 1.0) * 32767.0).astype(np.int16).tobytes()
             play_cmd = [
-                "paplay",
-                "--raw",
-                "--format=s16le",
-                "--rate=" + str(sr),
-                "--channels=1"
-            ]
+		"paplay",
+		"--raw",
+		"--format=s16le",
+		"--rate=" + str(sr),
+		"--channels=1"
+	    ]
             proc = subprocess.Popen(play_cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
             _, stderr = proc.communicate(pcm16)
             if proc.returncode != 0:
@@ -439,13 +444,14 @@ def main():
             if check_stop(stop_button):
                 print("\n⏹️  Stop button pressed")
                 break
-
+            print("⏳ Waiting for speech...")
             audio_data, rate, ch = record_with_vad(timeout_seconds=30, stop_button=stop_button)
-
+            print("Mark0")
             if audio_data:
+                print("📝 Processing captured audio...")
                 save_wav(audio_data, TEMP_WAV, sample_rate=rate, channels=ch)
                 user_text = transcribe_audio(whisper_model, TEMP_WAV)
-
+                print("Mark1")
                 if user_text:
                     print(f"📝 You said: \"{user_text}\"")
                     if any(w in user_text.lower() for w in ["goodbye", "bye", "stop", "exit", "quit", "shut down", "turn off"]):
@@ -454,9 +460,7 @@ def main():
 
                     reply = generate_response(user_text)
                     print(f"🤖 Assistant: \"{reply}\"\n")
-                    print("🔊 Speaking...")
                     synthesize_and_play(reply)
-                    #speak_text(tts_pipeline, reply)
 
                     print(f"⏳ Ready again in {AUTO_RESTART_DELAY}s...")
                     time.sleep(AUTO_RESTART_DELAY)
