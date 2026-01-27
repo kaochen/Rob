@@ -1,20 +1,5 @@
 #!/usr/bin/env python3
-"""
-Voice Chatbot (USB Mic + Bluetooth/Analog Speaker) — TTS Tensor-safe + PipeWire
 
-Fixes:
-- TTS: handle PyTorch Tensors from Kokoro by converting to NumPy before int16.
-- Use tts_pipeline.sample_rate if available (fallback 24000).
-- pw-cat uses format "s16" (correct token).
-- VAD uses float RMS (no int16 overflow).
-- Auto-fallback capture configs if mic rejects 16k/mono.
-
-Run:
-  python3 chatbot.py
-  python3 chatbot.py --mic-target <source-id-or-name>
-  MIC_TARGET=<source-id-or-name> python3 chatbot.py
-  python3 chatbot.py --test
-"""
 
 import sys
 import os
@@ -25,7 +10,6 @@ import wave
 import numpy as np
 from pathlib import Path
 import ollama
-from kokoro import KPipeline
 from faster_whisper import WhisperModel
 from chatvoice import synthesize_and_play
 
@@ -85,10 +69,6 @@ def init_models():
         cpu_threads=4,
         download_root=str(Path.home() / ".cache" / "whisper")
     )
-
-    print(_("  Loading Kokoro TTS..."))
-    tts = KPipeline(lang_code='f')
-
     print(_("  Checking Ollama..."))
     try:
         ollama.list()
@@ -97,7 +77,7 @@ def init_models():
         sys.exit(1)
 
     print(_("✅ All models loaded successfully!\n"))
-    return whisper, tts
+    return whisper
 
 def init_button():
     if not GPIO_AVAILABLE:
@@ -299,7 +279,7 @@ def generate_response(user_text):
         resp = ollama.chat(
             model=LLM_MODEL,
             messages=[
-                {"role": "system", "content": "Vous êtes un assistant vocal aidant. Garder les réponses concises (max 2 phrases) et  conversationnel."},
+                {"role": "system", "content": "Vous êtes un assistant vocal aidant. Garder les réponses concises (max 2 phrases) sans signes ni émojis."},
                 {"role": "user", "content": user_text}
             ],
             options={"temperature": 0.7, "num_predict": 60, "top_p": 0.9}
@@ -309,45 +289,6 @@ def generate_response(user_text):
         print(f"❌ LLM Error: {e}")
         return "I'm sorry, I had trouble processing that."
 
-# ---- TTS utils (Tensor-safe) ----
-def _to_numpy_audio(audio):
-    """Convert various audio containers (torch.Tensor, list, np.ndarray) to 1-D float32 NumPy array."""
-    try:
-        import torch  # only for isinstance check; safe if not installed
-        if isinstance(audio, torch.Tensor):
-            audio = audio.detach().cpu().float().numpy()
-    except Exception:
-        # torch not present or conversion failed; fall through
-        pass
-    audio = np.asarray(audio, dtype=np.float32)
-    if audio.ndim > 1:
-        audio = np.squeeze(audio)
-    return audio
-
-def speak_text(tts_pipeline, text):
-    print("🔊 Speaking...")
-    try:
-        # Use pipeline sample_rate if available; default to 24k.
-        sr = int(getattr(tts_pipeline, "sample_rate", 24000) or 24000)
-        gen = tts_pipeline(text, voice=TTS_VOICE, speed=TTS_SPEED)
-        for _, _, audio in gen:
-            audio_np = _to_numpy_audio(audio)
-            pcm16 = (np.clip(audio_np, -1.0, 1.0) * 32767.0).astype(np.int16).tobytes()
-            play_cmd = [
-		"paplay",
-		"--raw",
-		"--format=s16le",
-		"--rate=" + str(sr),
-		"--channels=1"
-	    ]
-            proc = subprocess.Popen(play_cmd, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
-            _, stderr = proc.communicate(pcm16)
-            if proc.returncode != 0:
-                err = (stderr or b"").decode("utf-8", errors="ignore").strip()
-                if err:
-                    print(f"❗ pw-cat playback: {err}")
-    except Exception as e:
-        print(f"❌ TTS Error: {e}")
 
 def record_fixed_seconds(seconds=3, stop_button=None):
     print(f"🎙️  Recording ~{seconds}s for test...")
@@ -407,7 +348,7 @@ def main():
 
     if len(args) > 0:
         if args[0] == "--help":
-            print("Voice Chatbot - USB Mic + Bluetooth/Analog Speaker")
+            print("Voice Chatbot - USB Mic + USB Speaker")
             print("\nUsage: python3 chatbot.py [--mic-target <id-or-name>] [--test]")
             print("  --mic-target   Force a specific PipeWire source (from `wpctl status`)")
             print("  --test         Record ~3s and play back (quick audio sanity check)")
@@ -425,7 +366,7 @@ def main():
             print("✅ Audio test complete!")
             sys.exit(0)
 
-    whisper_model, tts_pipeline = init_models()
+    whisper_model = init_models()
     stop_button = init_button()
 
     print("\n" + "="*50)
@@ -433,7 +374,7 @@ def main():
     print("="*50)
     print("Setup:")
     print("  • Microphone: USB (PipeWire default source)")
-    print("  • Speaker: Bluetooth or 3.5mm (PipeWire default sink)")
+    print("  • Speaker: USB (PipeWire default sink)")
     print(f"  • Stop: {'GPIO 22 button or Ctrl+C' if stop_button else 'Press Ctrl+C'}")
     if MIC_TARGET:
         print(f"  • Mic target override: {MIC_TARGET}")
