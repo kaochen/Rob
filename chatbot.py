@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 
+import json
 import sys
 import os
 import signal
@@ -10,6 +11,7 @@ import wave
 import numpy as np
 from pathlib import Path
 import ollama
+from ollama import chat
 from faster_whisper import WhisperModel
 from chatvoice import synthesize_and_play
 
@@ -273,21 +275,29 @@ def transcribe_audio(whisper_model, audio_path):
         print(f"❌ Transcription error: {e}")
         return None
 
-def generate_response(user_text):
+def generate_response(user_input, conversation_history):
     print("💭 Thinking...")
     try:
-        resp = ollama.chat(
+        resp = chat(
             model=LLM_MODEL,
-            messages=[
-                {"role": "system", "content": "Vous êtes un assistant vocal aidant. Garder les réponses concises (max 2 phrases) sans signes ni émojis."},
-                {"role": "user", "content": user_text}
-            ],
+            messages=[*conversation_history,
+                                    {"role": "system", "content": "Vous êtes un assistant vocal aidant. Garder les réponses concises (max 2 phrases) sans signes, ni émojis."},
+                                    {'role': 'user', 'content': user_input}],
             options={"temperature": 0.7, "num_predict": 60, "top_p": 0.9}
         )
-        return resp["message"]["content"].strip()
+        conversation_history += [
+            {'role': 'user', 'content': user_input},
+            {'role': 'assistant', 'content': resp["message"]["content"] },
+        ]
+        # Keep conversation history short, five questions, five answers
+        if len(conversation_history) > 10:
+            conversation_history = conversation_history[-10:]
+
+        return resp["message"]["content"]
     except Exception as e:
         print(f"❌ LLM Error: {e}")
-        return "I'm sorry, I had trouble processing that."
+        response = "I'm sorry, I had trouble processing that."
+
 
 
 def record_fixed_seconds(seconds=3, stop_button=None):
@@ -380,6 +390,15 @@ def main():
         print(f"  • Mic target override: {MIC_TARGET}")
     print("\nListening for speech...\n")
 
+    #Stored conversation, keep it short for raspberry pi
+    conversation_history = []
+    fichier_conversation = "conversation.json"
+
+    # Load previous conversation if exists
+    if os.path.exists(fichier_conversation):
+        with open(fichier_conversation, 'r', encoding='utf-8') as f:
+            conversation_history = json.load(f)
+
     while True:
         try:
             if check_stop(stop_button):
@@ -387,19 +406,19 @@ def main():
                 break
             print("⏳ Waiting for speech...")
             audio_data, rate, ch = record_with_vad(timeout_seconds=30, stop_button=stop_button)
-            print("Mark0")
+
             if audio_data:
                 print("📝 Processing captured audio...")
                 save_wav(audio_data, TEMP_WAV, sample_rate=rate, channels=ch)
                 user_text = transcribe_audio(whisper_model, TEMP_WAV)
-                print("Mark1")
+
                 if user_text:
                     print(f"📝 You said: \"{user_text}\"")
                     if any(w in user_text.lower() for w in ["goodbye", "bye", "stop", "exit", "quit", "shut down", "turn off"]):
                         synthesize_and_play("Goodbye!")
                         break
 
-                    reply = generate_response(user_text)
+                    reply = generate_response(user_text, conversation_history)     
                     print(f"🤖 Assistant: \"{reply}\"\n")
                     synthesize_and_play(reply)
 
@@ -419,6 +438,10 @@ def main():
             print(f"\n❌ Error: {e}")
             print("Restarting in 3 seconds...\n")
             time.sleep(3)
+
+    # Backup conversation history on exit
+    with open(fichier_conversation, 'w', encoding='utf-8') as f:
+        json.dump(conversation_history, f, ensure_ascii=False, indent=4)
 
     print("\n👋 Goodbye!")
     print("="*50)
