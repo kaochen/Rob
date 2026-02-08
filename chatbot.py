@@ -12,7 +12,7 @@ import numpy as np
 from pathlib import Path
 
 
-import src.speak_to_text as stt
+import src.speech_to_text as stt
 import src.text_to_speech as tts
 import src.llm as llm
 
