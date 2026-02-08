@@ -4,7 +4,19 @@ from piper.voice import PiperVoice
 from scipy.io.wavfile import write
 
 
-def synthesize_and_play(text, save_to_file=False, filename="output.wav"):
+def init_text_to_speech():
+    print(_("  Initializing Text-to-Speech..."))
+    # No heavy initialization needed for Piper, but we can preload the model if desired
+    model = "fr_FR-upmc-medium.onnx"
+    try:
+        tts = PiperVoice.load(model)
+        print(_("✅ Text-to-Speech is ready!\n"))
+    except Exception as e:
+        print(f"❌ Failed to load TTS model: {e}")
+        sys.exit(1)
+    return 
+
+def synthesize_and_play(text, save_to_file=False, filename="output.wav", voice=None):
     """
     Synthesize text to speech and play it via sounddevice.
 
@@ -14,7 +26,6 @@ def synthesize_and_play(text, save_to_file=False, filename="output.wav"):
         filename (str): Name of the output file (if save_to_file=True).
     """
     model = "fr_FR-upmc-medium.onnx"
-    voice = PiperVoice.load(model)
 
     stream = sd.OutputStream(
         samplerate=voice.config.sample_rate,

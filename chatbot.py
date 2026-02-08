@@ -10,10 +10,11 @@ import subprocess
 import wave
 import numpy as np
 from pathlib import Path
-import ollama
-from ollama import chat
-from faster_whisper import WhisperModel
-from chatvoice import synthesize_and_play
+
+
+import src.speak_to_text as stt
+import src.text_to_speech as tts
+import src.llm as llm
 
 ### Setup Localization
 import gettext
@@ -59,27 +60,6 @@ TEMP_WAV = Path("/tmp/recording.wav")
 MIC_TARGET = os.environ.get("MIC_TARGET")
 
 # ===== Init =====
-def init_models():
-    print(_("🚀 Starting Voice Chatbot..."))
-    print(_("📦 Loading models (this may take a moment the first time)..."))
-
-    print(_("  Loading Whisper..."))
-    whisper = WhisperModel(
-        WHISPER_MODEL,
-        device="cpu",
-        compute_type="int8",
-        cpu_threads=4,
-        download_root=str(Path.home() / ".cache" / "whisper")
-    )
-    print(_("  Checking Ollama..."))
-    try:
-        ollama.list()
-    except Exception:
-        print(_("❌ Ollama not running! Start it with: sudo systemctl enable --now ollama"))
-        sys.exit(1)
-
-    print(_("✅ All models loaded successfully!\n"))
-    return whisper
 
 def init_button():
     if not GPIO_AVAILABLE:
@@ -254,51 +234,6 @@ def save_wav(audio_data, filepath, sample_rate, channels):
         wf.setframerate(sample_rate)
         wf.writeframes(audio_data)
 
-def transcribe_audio(whisper_model, audio_path):
-    print("🧠 Transcribing...")
-    try:
-        segments, info = whisper_model.transcribe(
-            str(audio_path),
-            language="fr",
-            beam_size=1,
-            best_of=1,
-            temperature=0.0,
-            vad_filter=True,
-            vad_parameters=dict(
-                min_silence_duration_ms=500,
-                speech_pad_ms=200
-            )
-        )
-        text = " ".join(seg.text.strip() for seg in segments)
-        return text.strip() if text else None
-    except Exception as e:
-        print(f"❌ Transcription error: {e}")
-        return None
-
-def generate_response(user_input, conversation_history):
-    print("💭 Thinking...")
-    try:
-        resp = chat(
-            model=LLM_MODEL,
-            messages=[*conversation_history,
-                                    {"role": "system", "content": "Vous êtes un assistant vocal aidant. Garder les réponses concises (max 2 phrases) sans signes, ni émojis."},
-                                    {'role': 'user', 'content': user_input}],
-            options={"temperature": 0.7, "num_predict": 60, "top_p": 0.9}
-        )
-        conversation_history += [
-            {'role': 'user', 'content': user_input},
-            {'role': 'assistant', 'content': resp["message"]["content"] },
-        ]
-        # Keep conversation history short, five questions, five answers
-        if len(conversation_history) > 10:
-            conversation_history = conversation_history[-10:]
-
-        return resp["message"]["content"]
-    except Exception as e:
-        print(f"❌ LLM Error: {e}")
-        response = "I'm sorry, I had trouble processing that."
-
-
 
 def record_fixed_seconds(seconds=3, stop_button=None):
     print(f"🎙️  Recording ~{seconds}s for test...")
@@ -376,7 +311,11 @@ def main():
             print("✅ Audio test complete!")
             sys.exit(0)
 
-    whisper_model = init_models()
+    #init models and voices
+    whisper_model = stt.init_speak_to_text(WHISPER_MODEL)
+    llm.init_llm(LLM_MODEL)
+    tts_voice = tts.init_text_to_speech()
+
     stop_button = init_button()
 
     print("\n" + "="*50)
@@ -410,17 +349,17 @@ def main():
             if audio_data:
                 print("📝 Processing captured audio...")
                 save_wav(audio_data, TEMP_WAV, sample_rate=rate, channels=ch)
-                user_text = transcribe_audio(whisper_model, TEMP_WAV)
+                user_text = stt.transcribe_audio(whisper_model, TEMP_WAV)
 
                 if user_text:
                     print(f"📝 You said: \"{user_text}\"")
                     if any(w in user_text.lower() for w in ["goodbye", "bye", "stop", "exit", "quit", "shut down", "turn off"]):
-                        synthesize_and_play("Goodbye!")
+                        tts.synthesize_and_play("Goodbye!", voice=tts_voice)
                         break
 
-                    reply = generate_response(user_text, conversation_history)     
+                    reply = llm.generate_response(user_text, conversation_history, LLM_MODEL)
                     print(f"🤖 Assistant: \"{reply}\"\n")
-                    synthesize_and_play(reply)
+                    tts.synthesize_and_play(reply, voice=tts_voice)
 
                     print(f"⏳ Ready again in {AUTO_RESTART_DELAY}s...")
                     time.sleep(AUTO_RESTART_DELAY)

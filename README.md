@@ -163,6 +163,19 @@ libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm \
 libncurses5-dev libncursesw5-dev xz-utils tk-dev libffi-dev \
 liblzma-dev python3-openssl
 ~~~
+
+Create a virtual environnement for installing software with "pip"
+
+~~~bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install ollama
+~~~
+
+
+
+
+
 With the last upade of Raspberry OS (Trixie) a dev package is missing for "kokoro"
 We need to force a python 3.12 virtual environment.
 
@@ -430,7 +443,6 @@ Example for French :
 ~~~bash
 xgettext --from-code=UTF-8 -s  -o locales/messages.pot *.py
 msginit -l fr -o ./locales/fr/LC_MESSAGES/messages.po -i locales/messages.pot
-Compile :
+#Edit locales/messages.pot and compile :
 msgfmt -o locales/fr/LC_MESSAGES/messages.mo locales/fr/LC_MESSAGES/messages.po
 ~~~
-Edit locales/messages.pot
