@@ -1,0 +1,15 @@
+{
+  "stt": {
+    "model": "small",
+    "language": "fr"
+  },
+  "tts": {
+    "voice": "locales/fr/voices/fr_FR-upmc-medium.onnx",
+    "tts_voice": "ff_siwis"
+  },
+  "llm": {
+    "model": "gemma3:1b",
+    "max_conversation_history": 10
+  }
+}
+

@@ -11,7 +11,7 @@ import wave
 import numpy as np
 from pathlib import Path
 
-
+import src.settings as settings
 import src.speech_to_text as stt
 import src.text_to_speech as tts
 import src.llm as llm
@@ -311,9 +311,15 @@ def main():
             print("✅ Audio test complete!")
             sys.exit(0)
 
+    #read settings
+    settings_dict = settings.load_settings()
+    stt_model = settings.read_setting("stt.model", settings_dict, default_value=WHISPER_MODEL)
+    llm_model = settings.read_setting("llm.model", settings_dict, default_value=LLM_MODEL)
+    print(f"✅ Loaded settings: Whisper={stt_model}, LLM={llm_model}")
+
     #init models and voices
-    whisper_model = stt.init_speak_to_text(WHISPER_MODEL)
-    llm.init_llm(LLM_MODEL)
+    whisper_model = stt.init_speak_to_text(stt_model)
+    llm.init_llm(llm_model)
     tts_voice = tts.init_text_to_speech()
 
     stop_button = init_button()
