@@ -313,13 +313,15 @@ def main():
 
     #read settings
     settings_dict = settings.load_settings()
+    #init models
+    llm_name = llm.init_llm()
+   
+    #init speech-to-text
     stt_model = settings.read_setting("stt.model", settings_dict, default_value=WHISPER_MODEL)
-    llm_model = settings.read_setting("llm.model", settings_dict, default_value=LLM_MODEL)
-    print(f"✅ Loaded settings: Whisper={stt_model}, LLM={llm_model}")
-
-    #init models and voices
     whisper_model = stt.init_speak_to_text(stt_model)
-    llm.init_llm(llm_model)
+    print(f"✅ Loaded settings: Whisper={stt_model}")
+
+    #init text-to-speech
     tts_voice = tts.init_text_to_speech()
 
     stop_button = init_button()
@@ -359,12 +361,18 @@ def main():
 
                 if user_text:
                     print(f"📝 You said: \"{user_text}\"")
-                    if any(w in user_text.lower() for w in ["goodbye", "bye", "stop", "exit", "quit", "shut down", "turn off"]):
+                    goodbye_words = ["goodbye", "bye", "stop", "exit", "quit", "shut down", "turn off"]
+                    matched_word = next((w for w in goodbye_words if w in user_text.lower()), None)
+                    if matched_word:
+                        print(f"Found goodbye word: {matched_word}")
                         tts.synthesize_and_play("Goodbye!", voice=tts_voice)
                         break
 
-                    reply = llm.generate_response(user_text, conversation_history, LLM_MODEL)
+                    ## Generate response from LLM and update conversation history
+                    reply, conversation_history = llm.generate_response(user_text, conversation_history, llm_name)
+
                     print(f"🤖 Assistant: \"{reply}\"\n")
+                    llm.print_conversation_history(conversation_history)
                     tts.synthesize_and_play(reply, voice=tts_voice)
 
                     print(f"⏳ Ready again in {AUTO_RESTART_DELAY}s...")
@@ -387,6 +395,7 @@ def main():
     # Backup conversation history on exit
     with open(fichier_conversation, 'w', encoding='utf-8') as f:
         json.dump(conversation_history, f, ensure_ascii=False, indent=4)
+        print(f"💾 Conversation history saved to {fichier_conversation}")
 
     print("\n👋 Goodbye!")
     print("="*50)
