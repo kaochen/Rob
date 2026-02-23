@@ -33,13 +33,13 @@ def model_exists(model_name: str) -> bool:
 
 
 
-
 def init_llm():
     print(_("  Checking Ollama..."))
     try:
         ollama.list()
     except Exception:
-        print(_("❌ Ollama not running! Start it with: sudo systemctl enable --now ollama"))
+        msg = _("Ollama not running! Start it with")
+        print(f"❌ {msg}: sudo systemctl enable --now ollama")
         sys.exit(1)
 
     llm_name = "ROBOT_MODEL"
@@ -47,7 +47,8 @@ def init_llm():
         create_model_from_modelfile("Modelfile", llm_name)
     else:
         print(f"The model '{llm_name}' already exists.")
-    print(_("✅ Ollama is ready!"))
+        msg = _("Ollama is up and running!")
+        print(f"✅ {msg}\n")
     return llm_name
 
 
@@ -64,7 +65,7 @@ def generate_response(user_text, conversation_history, llm_model="gemma3:1b"):
         return resp["message"]["content"], conversation_history
     except Exception as e:
         print(f"❌ LLM Error: {e}")
-        response = "I'm sorry, I had trouble processing that."
+        response = _("I'm sorry, I had trouble processing that.")
 
 def print_conversation_history(conversation_history):
     print("\n📜 Conversation History:")

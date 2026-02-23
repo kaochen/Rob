@@ -2,6 +2,7 @@
 
 
 import json
+from logging import warning
 import sys
 import os
 import signal
@@ -16,10 +17,29 @@ import src.speech_to_text as stt
 import src.text_to_speech as tts
 import src.llm as llm
 
-### Setup Localization
+import os
 import gettext
-gettext.install('messages', localedir='locales', names=['gettext'])
+import locale
 
+def setup_translation():
+    # 1. Detect the user's locale settings
+    lang, _ = locale.getlocale(locale.LC_MESSAGES)  # Exemple : ('fr_FR', 'UTF-8')
+    if lang is None:
+        # If failed to detect, fallback to environment variable or default to English
+        lang = os.getenv('LANG', 'en_US').split('.')[0]
+        lang = lang.split('_')[0]
+
+    # 2. Setup gettext translation based on detected language
+    localedir = os.path.join(os.path.dirname(__file__), 'locales')
+    translation = gettext.translation(
+        'messages',  # domain name
+        localedir=localedir,
+        languages=[lang],
+        fallback=True  # Use fallback to avoid errors if translation files are missing
+    )
+    translation.install()
+
+    return translation
 
 # Optional GPIO stop button
 try:
@@ -56,10 +76,12 @@ def init_button():
         return None
     try:
         btn = Button(STOP_BUTTON_PIN, pull_up=True, bounce_time=0.1)
-        print(_("🔘 Stop button ready on GPIO 22"))
+        warning = _("Stop button ready on GPIO 22")
+        print(f"🔘 {warning}")
         return btn
     except Exception:
-        print(_("⚠️  GPIO pins not accessible"))
+        warning = _("WARNING: GPIO pins not accessible")
+        print(f"⚠️ {warning}")
         return None
 
 # ===== Helpers =====
@@ -68,16 +90,19 @@ def check_stop(stop_button):
 
 # ===== Main =====
 def main():
+    setup_translation()  # Initialize localization and get the translation function
     global MIC_TARGET
     args = sys.argv[1:]
     if "--mic-target" in args:
         try:
             MIC_TARGET = args[args.index("--mic-target") + 1]
         except Exception:
-            print("⚠️  Usage: --mic-target <source-id-or-name>")
+            warning = _("Usage: --mic-target <source-id-or-name>")
+            print(f"⚠️ {warning}")
 
     def shutdown_handler(sig, frame):
-        print("\n\n👋 Shutting down...")
+        warning = _("Received shutdown signal")
+        print(f"⚠️ {warning}")
         sys.exit(0)
 
     signal.signal(signal.SIGINT, shutdown_handler)
@@ -119,8 +144,11 @@ def main():
     stop_button = init_button()
 
     print("\n" + "="*50)
-    print("🤖 VOICE CHATBOT READY!")
+    msg_hello = _("I am ready!")
+    print(f"🤖 {msg_hello}")
+    tts.synthesize_and_play(msg_hello, voice=tts_voice)
     print("="*50)
+
     print("Setup:")
     print("  • Microphone: USB (PipeWire default source)")
     print("  • Speaker: USB (PipeWire default sink)")
@@ -141,33 +169,37 @@ def main():
     while True:
         try:
             if check_stop(stop_button):
-                print("\n⏹️  Stop button pressed")
+                warning = _(" Stop button pressed")
+                print(f"\n⏹️ {warning}")
                 break
             print("⏳ Waiting for speech...")
             audio_data, rate, ch = stt.record_with_vad(timeout_seconds=30, stop=check_stop(stop_button), mic_target=MIC_TARGET)
 
             if audio_data:
-                print("📝 Processing captured audio...")
+                warning = _(" Stop button pressed")
+                print(f"📝 {warning}")
                 stt.save_wav(audio_data, TEMP_WAV, sample_rate=rate, channels=ch)
                 user_text = stt.transcribe_audio(whisper_model, TEMP_WAV)
 
                 if user_text:
-                    print(f"📝 You said: \"{user_text}\"")
+                    warning = _("You said:")
+                    print(f"📝 {warning} \"{user_text}\"")
                     goodbye_words = ["goodbye", "bye", "stop", "exit", "quit", "shut down", "turn off"]
                     matched_word = next((w for w in goodbye_words if w in user_text.lower()), None)
                     if matched_word:
                         print(f"Found goodbye word: {matched_word}")
-                        tts.synthesize_and_play("Goodbye!", voice=tts_voice)
                         break
 
                     ## Generate response from LLM and update conversation history
                     reply, conversation_history = llm.generate_response(user_text, conversation_history, llm_name)
-
-                    print(f"🤖 Assistant: \"{reply}\"\n")
+                    warning = _("Assistant:")
+                    print(f"🤖 {warning} \"{reply}\"")
                     llm.print_conversation_history(conversation_history)
                     tts.synthesize_and_play(reply, voice=tts_voice)
 
-                    print(f"⏳ Ready again in {AUTO_RESTART_DELAY}s...")
+
+                    warning = _("Ready again in {AUTO_RESTART_DELAY}s...")
+                    print(f"⏳ {warning}")
                     time.sleep(AUTO_RESTART_DELAY)
                     print("🎤 Listening...\n")
                 else:
@@ -189,7 +221,9 @@ def main():
         json.dump(conversation_history, f, ensure_ascii=False, indent=4)
         print(f"💾 Conversation history saved to {fichier_conversation}")
 
-    print("\n👋 Goodbye!")
+    msg_goodbye = _("Goodbye")
+    tts.synthesize_and_play(msg_goodbye, voice=tts_voice)
+    print(f"\n👋 {msg_goodbye}")
     print("="*50)
 
 if __name__ == "__main__":

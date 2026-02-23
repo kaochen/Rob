@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-24 16:26+0100\n"
+"POT-Creation-Date: 2026-02-23 20:12+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,43 +17,43 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: chatbot.py:92
-msgid "  Checking Ollama..."
+#: chatbot.py:152 chatbot.py:159
+msgid " Stop button pressed"
 msgstr ""
 
-#: chatbot.py:89
-msgid "  Loading Kokoro TTS..."
+#: chatbot.py:176
+msgid "Assistant:"
+msgstr ""
+
+#: chatbot.py:207
+msgid "Goodbye"
+msgstr ""
+
+#: chatbot.py:127
+msgid "I AM READY!"
+msgstr ""
+
+#: chatbot.py:182
+#, python-brace-format
+msgid "Ready again in {AUTO_RESTART_DELAY}s..."
+msgstr ""
+
+#: chatbot.py:84
+msgid "Received shutdown signal"
+msgstr ""
+
+#: chatbot.py:60
+msgid "Stop button ready on GPIO 22"
 msgstr ""
 
 #: chatbot.py:80
-msgid "  Loading Whisper..."
+msgid "Usage: --mic-target <source-id-or-name>"
 msgstr ""
 
-#: chatbot.py:110
-msgid "⚠️  GPIO pins not accessible"
+#: chatbot.py:64
+msgid "WARNING: GPIO pins not accessible"
 msgstr ""
 
-#: chatbot.py:99
-msgid "✅ All models loaded successfully!\n"
-msgstr ""
-
-#: chatbot.py:96
-msgid ""
-"❌ Ollama not running! Start it with: sudo systemctl enable --now ollama"
-msgstr ""
-
-#: chatbot.py:162
-msgid "🎤 Listening... (speak now)"
-msgstr ""
-
-#: chatbot.py:78
-msgid "📦 Loading models (this may take a moment the first time)..."
-msgstr ""
-
-#: chatbot.py:107
-msgid "🔘 Stop button ready on GPIO 22"
-msgstr ""
-
-#: chatbot.py:77
-msgid "🚀 Starting Voice Chatbot..."
+#: chatbot.py:165
+msgid "You said:"
 msgstr ""

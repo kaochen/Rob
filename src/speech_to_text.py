@@ -33,12 +33,14 @@ def init_speak_to_text(model_name="small"):
         cpu_threads=4,
         download_root=str(Path.home() / ".cache" / "whisper")
     )
-    print(_("✅ Whisper is up and running!\n"))
+    msg = _("Whisper is up and running!")
+    print(f"✅ {msg}\n")
     return whisper
 
 
 def transcribe_audio(whisper_model, audio_path):
-    print("🧠 Transcribing...")
+    msg = _("Transcribing...")
+    print(f"🧠 {msg}")
     try:
         segments, info = whisper_model.transcribe(
             str(audio_path),
@@ -195,7 +197,8 @@ def record_with_vad(timeout_seconds=30, stop=False, mic_target=None):
             total_ms += FRAME_MS
 
     except KeyboardInterrupt:
-        print("\n  ⏹️  Recording stopped")
+        msg = _("Recording stopped.")
+        print(f"\n  ⏹️ {msg}")
         audio_buffer = None
     finally:
         try:

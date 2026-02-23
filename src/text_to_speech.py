@@ -10,9 +10,11 @@ def init_text_to_speech():
     model = "locales/fr/voices/fr_FR-upmc-medium.onnx"
     try:
         tts = PiperVoice.load(model)
-        print(_("✅ Text-to-Speech is ready!\n"))
+        msg = _("Text-to-Speech is up and running!")
+        print(f"✅ {msg}\n")
     except Exception as e:
-        print(f"❌ Failed to load TTS model: {e}")
+        msg = _("Failed to load TTS model")
+        print(f"❌ {msg}: {e}")
         sys.exit(1)
     return tts
 
@@ -39,7 +41,8 @@ def synthesize_and_play(text, voice=None):
         sd.wait()
 
     except Exception as e:
-        print(f"Erreur : {e}")
+        msg = _("Error during TTS synthesis")
+        print(f"❌ {msg}: {e}")
     finally:
         stream.stop()
         stream.close()
