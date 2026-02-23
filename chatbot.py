@@ -137,6 +137,7 @@ def main():
     stt_model = settings.read_setting("stt.model", settings_dict, default_value=WHISPER_MODEL)
     whisper_model = stt.init_speak_to_text(stt_model)
     print(f"✅ Loaded settings: Whisper={stt_model}")
+    goodbye_words = settings.read_setting("llm.goodbye_words", settings_dict, default_value=["goodbye", "bye", "quit", "exit", "stop", "see you", "farewell"])
 
     #init text-to-speech
     tts_voice = tts.init_text_to_speech()
@@ -184,7 +185,6 @@ def main():
                 if user_text:
                     warning = _("You said:")
                     print(f"📝 {warning} \"{user_text}\"")
-                    goodbye_words = ["goodbye", "bye", "stop", "exit", "quit", "shut down", "turn off"]
                     matched_word = next((w for w in goodbye_words if w in user_text.lower()), None)
                     if matched_word:
                         print(f"Found goodbye word: {matched_word}")
