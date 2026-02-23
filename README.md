@@ -438,11 +438,26 @@ ollama run gemma3:270m "Say hello"
 - On Pi 5, prefer `lgpio`/`rpi-lgpio`; legacy `RPi.GPIO` is removed above to avoid conflicts.
 
 
-##Localization :
-Example for French :
+## Localization :
+
+Init your language the first time (example for French ):
 ~~~bash
-xgettext --from-code=UTF-8 -s  -o locales/messages.pot *.py
-msginit -l fr -o ./locales/fr/LC_MESSAGES/messages.po -i locales/messages.pot
-#Edit locales/messages.pot and compile :
-msgfmt -o locales/fr/LC_MESSAGES/messages.mo locales/fr/LC_MESSAGES/messages.po
+msginit -l fr -o ./locales/fr/LC_MESSAGES/messages.po -i ./locales/messages.pot
+~~~
+When a change occured in the code, or you updated the messages.po file
+~~~bash
+sh ./locales/updateTranslation.sh fr
+~~~
+
+If you want to test a specific language :
+
+#### Pour le français :
+~~~bash
+export LANG=fr_FR.UTF-8
+python3 chatbot.py
+~~~
+#### Para español :
+~~~bash
+export LANG=es_ES.UTF-8
+python3 chatbot.py
 ~~~
