@@ -4,8 +4,7 @@
     "language": "fr"
   },
   "tts": {
-    "voice": "locales/fr/voices/fr_FR-upmc-medium.onnx",
-    "tts_voice": "ff_siwis"
+    "voice": "marius"
   },
   "llm": {
     "model": "gemma3:1b",

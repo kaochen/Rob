@@ -140,7 +140,7 @@ def main():
     goodbye_words = settings.read_setting("llm.goodbye_words", settings_dict, default_value=["goodbye", "bye", "quit", "exit", "stop", "see you", "farewell"])
 
     #init text-to-speech
-    tts_voice = tts.init_text_to_speech()
+    tts_voice = tts.init_text_to_speech(settings.read_setting("tts.voice", settings_dict, default_value="alba"))
 
     stop_button = init_button()
 

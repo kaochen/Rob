@@ -3,41 +3,40 @@ import sounddevice as sd
 from piper.voice import PiperVoice
 from scipy.io.wavfile import write
 
+from pocket_tts import TTSModel
+import scipy.io.wavfile
 
-def init_text_to_speech():
-    print(_("  Initializing Text-to-Speech..."))
-    # No heavy initialization needed for Piper, but we can preload the model if desired
-    model = "locales/fr/voices/fr_FR-upmc-medium.onnx"
+def init_text_to_speech(model="jean"):
+    print(_("  Initializing Text-to-Speech with the voice of model '{model}'...").format(model=model))
     try:
-        tts = PiperVoice.load(model)
+        tts = TTSModel.load_model()
+        voice_state = tts.get_state_for_audio_prompt(model)
         msg = _("Text-to-Speech is up and running!")
         print(f"✅ {msg}\n")
     except Exception as e:
         msg = _("Failed to load TTS model")
         print(f"❌ {msg}: {e}")
         sys.exit(1)
-    return tts
+    return tts, voice_state
 
 def synthesize_and_play(text, voice=None):
     """
     Synthesize text to speech and play it via sounddevice.
     """
-    voice = voice if voice else init_text_to_speech();
+    voice, voice_state = voice if voice else init_text_to_speech();
     
     stream = sd.OutputStream(
-        samplerate=voice.config.sample_rate,
+        samplerate=voice.sample_rate,
         channels=1,
-        dtype='int16'
+        dtype='float32',
     )
     stream.start()
     try:
         # Synthesize the text (returns a generator of AudioChunk)
-        audio_generator = voice.synthesize(text)
-        # Extract samples from each AudioChunk and concatenate them
-        audio_samples = np.concatenate([chunk.audio_int16_array for chunk in audio_generator])
-        # Convert to int16 if necessary
-        int_data = audio_samples.astype(np.int16)
-        stream.write(int_data)
+        voice_message = voice.generate_audio(voice_state, text)
+        stream.start()
+        stream.write(np.zeros(1024, dtype=np.float32))  # Start with silence to avoid clicks
+        stream.write(voice_message)  # Write the generated audio to the stream
         sd.wait()
 
     except Exception as e:
