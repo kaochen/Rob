@@ -20,6 +20,7 @@ import src.llm as llm
 import os
 import gettext
 import locale
+from tabulate import tabulate
 
 def setup_translation():
     # 1. Detect the user's locale settings
@@ -52,16 +53,10 @@ except ImportError:
 # ===== Configuration =====
 STOP_BUTTON_PIN = 22
 
-
-# Models
-WHISPER_MODEL = "small"
-LLM_MODEL = "gemma3:1b"
-TTS_VOICE = "ff_siwis"
-TTS_SPEED = 1.1
+WHISPER_MODEL = "small"  # Options: tiny, base, small, medium, large
 
 # Conversation
 AUTO_RESTART_DELAY = 1.5
-WAKE_WORDS = ["hey computer", "okay computer", "hey assistant"]
 
 # Temp file
 TEMP_WAV = Path("/tmp/recording.wav")
@@ -144,20 +139,6 @@ def main():
 
     stop_button = init_button()
 
-    print("\n" + "="*50)
-    msg_hello = _("I am ready!")
-    print(f"🤖 {msg_hello}")
-    tts.synthesize_and_play(msg_hello, voice=tts_voice)
-    print("="*50)
-
-    print("Setup:")
-    print("  • Microphone: USB (PipeWire default source)")
-    print("  • Speaker: USB (PipeWire default sink)")
-    print(f"  • Stop: {'GPIO 22 button or Ctrl+C' if stop_button else 'Press Ctrl+C'}")
-    if MIC_TARGET:
-        print(f"  • Mic target override: {MIC_TARGET}")
-    print("\nListening for speech...\n")
-
     #Stored conversation, keep it short for raspberry pi
     conversation_history = []
     fichier_conversation = "conversation.json"
@@ -167,6 +148,14 @@ def main():
         with open(fichier_conversation, 'r', encoding='utf-8') as f:
             conversation_history = json.load(f)
 
+    ## Welcome message
+    print("\n" + "="*50)
+    msg_hello = _("I am ready!")
+    print(f"🤖 {msg_hello}")
+    tts.synthesize_and_play(msg_hello, voice=tts_voice)
+    print("="*50)
+
+    ## Main loop
     while True:
         try:
             if check_stop(stop_button):
@@ -177,11 +166,16 @@ def main():
             audio_data, rate, ch = stt.record_with_vad(timeout_seconds=30, stop=check_stop(stop_button), mic_target=MIC_TARGET)
 
             if audio_data:
+                ## Transcribe audio to text
+                start_time = time.time()
                 warning = _(" Stop button pressed")
                 print(f"📝 {warning}")
                 stt.save_wav(audio_data, TEMP_WAV, sample_rate=rate, channels=ch)
                 user_text = stt.transcribe_audio(whisper_model, TEMP_WAV)
-
+                transcribe_time = time.time() - start_time
+                print(f"✅ Transcription completed in {transcribe_time:.2f}s: \"{user_text}\"")
+                
+                ## Check for goodbye words and generate response if not found
                 if user_text:
                     warning = _("You said:")
                     print(f"📝 {warning} \"{user_text}\"")
@@ -191,17 +185,36 @@ def main():
                         break
 
                     ## Generate response from LLM and update conversation history
+                    reply_start_time = time.time()
                     reply, conversation_history = llm.generate_response(user_text, conversation_history, llm_name)
                     warning = _("Assistant:")
+                    reply_time = time.time() - reply_start_time
+                    warning += f" (response generated in {reply_time:.2f}s)"
                     print(f"🤖 {warning} \"{reply}\"")
-                    llm.print_conversation_history(conversation_history)
+                    ##
+                    ##llm.print_conversation_history(conversation_history)
+
+                    ## Synthesize and play the response
+                    tts_start_time = time.time()
                     tts.synthesize_and_play(reply, voice=tts_voice)
+                    tts_time = time.time() - tts_start_time
+                    warning = _("Response played in {tts_time:.2f}s").format(tts_time=tts_time)
+                    print(f"🔊 {warning}\n")
 
+                    total_time = time.time() - start_time
+                    print("⏱️  Timing breakdown:")
+                    print(tabulate([
+                        ["Transcription", f"{transcribe_time:.2f}s"],
+                        ["LLM Response", f"{reply_time:.2f}s"],
+                        ["Text-to-Speech", f"{tts_time:.2f}s"],
+                        ["Total", f"{total_time:.2f}s"]
+                    ], headers=["Step", "Time"], tablefmt="grid"))
 
-                    warning = _("Ready again in {AUTO_RESTART_DELAY}s...")
+                    ##
+                    warning = _("Ready again in {AUTO_RESTART_DELAY} seconds...").format(AUTO_RESTART_DELAY=AUTO_RESTART_DELAY)
                     print(f"⏳ {warning}")
                     time.sleep(AUTO_RESTART_DELAY)
-                    print("🎤 Listening...\n")
+
                 else:
                     print("❓ No speech detected in the captured audio\n")
             else:
