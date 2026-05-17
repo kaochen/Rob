@@ -1,6 +1,6 @@
 {
   "stt": {
-    "model": "small",
+    "model": "medium",
     "language": "fr"
   },
   "tts": {

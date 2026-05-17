@@ -18,9 +18,9 @@ def create_model_from_modelfile(modelfile_path: str, model_name: str):
             capture_output=True,
             text=True
         )
-        print(f"Modèle '{model_name}' créé avec succès !")
+        print(f"Model '{model_name}' created successfully!")
     except subprocess.CalledProcessError as e:
-        print(f"Erreur lors de la création du modèle : {e.stderr}")
+        print(f"Error occurred while creating the model : {e.stderr}")
         raise
 
 def model_exists(model_name: str) -> bool:
