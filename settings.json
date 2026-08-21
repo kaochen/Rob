@@ -4,10 +4,11 @@
     "language": "fr"
   },
   "tts": {
-    "voice": "marius"
+    "language": "french_24l",
+    "voice": "hf://kyutai/tts-voices/unmute-prod-website/degaulle-2.wav"
   },
   "llm": {
-    "model": "gemma3:1b",
+    "model": "gemma4:e2b",
     "max_conversation_history": 10,
     "goodbye_words": ["goodbye", "bye", "see you", "farewell", "au revoir", "adieu", "ciao", "sayonara", "stop", "exit", "quit", "shut down", "turn off"]
   }

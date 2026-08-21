@@ -8,4 +8,5 @@ __pycache__/
 *.sqlite
 *.log
 *.wav
+*.safetensors
 conversation.json
